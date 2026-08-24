@@ -47,7 +47,7 @@ begin
    Put_Line ("TEST 4 - Binary Output on Empty Input");
    Put_Line ("  4.1 Assert array bounds correctly collapse to 0");
    declare
-      B_Out : Byte_Array := Compress (Empty);
+      B_Out : constant Byte_Array := Compress (Empty);
    begin
       Assert (B_Out'Length = 0, "Binary compress did not return empty array");
       Put_Line ("      PASS");
@@ -56,8 +56,8 @@ begin
    Put_Line ("TEST 5 - Standard End-To-End Binary Flow");
    Put_Line ("  5.1 Assert identical reconstruction of pattern");
    declare
-      B_Out : Byte_Array := Compress (Pattern);
-      B_Dec : Byte_Array := Decompress (B_Out, Pattern'Length);
+      B_Out : constant Byte_Array := Compress (Pattern);
+      B_Dec : constant Byte_Array := Decompress (B_Out, Pattern'Length);
    begin
       Assert_Equal (Pattern, B_Dec, "Failed to reconstruct cyclic pattern");
       Put_Line ("      PASS");
@@ -67,8 +67,8 @@ begin
    Put_Line ("  6.1 Assert output is significantly smaller than input");
    Put_Line ("  6.2 Assert lossless decompression holds");
    declare
-      B_Out : Byte_Array := Compress (Repeated);
-      B_Dec : Byte_Array := Decompress (B_Out, Repeated'Length);
+      B_Out : constant Byte_Array := Compress (Repeated);
+      B_Dec : constant Byte_Array := Decompress (B_Out, Repeated'Length);
    begin
       Assert (B_Out'Length < Repeated'Length / 2, "Failed to compress heavily repeated stream");
       Assert_Equal (Repeated, B_Dec, "Failed max compression data reconstruction");
@@ -92,8 +92,7 @@ begin
    Put_Line ("  8.1 Assert references looking backwards beyond index 1 fail safely");
    begin
       declare
-         -- Create malicious token referencing index -2 (5 dist on index 1)
-         Bad_Toks : Token_Array(1..1) := (1 => (Kind => Reference, Distance => 5, Length => 3));
+         Bad_Toks : constant Token_Array(1..1) := (1 => (Kind => Reference, Distance => 5, Length => 3));
       begin
          Decompress_Logical (Bad_Toks, Out_Arr, Cnt);
          Assert (False, "Failed to trap invalid negative-index back reference");
@@ -106,10 +105,10 @@ begin
    Put_Line ("  9.1 Assert decoder throws error when bits are suddenly missing");
    begin
       declare
-         B_Out : Byte_Array := Compress (Pattern);
-         -- Break stream cleanly by shortening it
-         B_Bad : Byte_Array := B_Out(1 .. B_Out'Length - 1);
-         B_Dec : Byte_Array := Decompress (B_Bad, Pattern'Length);
+         B_Out : constant Byte_Array := Compress (Pattern);
+         B_Bad : constant Byte_Array := B_Out(1 .. B_Out'Length - 1);
+         B_Dec : constant Byte_Array := Decompress (B_Bad, Pattern'Length);
+         pragma Unreferenced (B_Dec);
       begin
          Assert (False, "Stream decoder failed to realize bits were missing");
       end;
@@ -120,7 +119,7 @@ begin
    Put_Line ("TEST 10 - Enforcement of Max Lookahead Limits");
    Put_Line ("  10.1 Assert 30-byte run splits across Lookahead_Size (18) limits");
    declare
-      Long_Pattern : Byte_Array(1..30) := (others => 99);
+      Long_Pattern : constant Byte_Array(1..30) := (others => 99);
    begin
       Compress_Logical (Long_Pattern, Toks, Cnt);
       -- Expect: 1 literal + 18-length ref + 11-length ref = 3 tokens.
@@ -137,8 +136,8 @@ begin
       Huge(1) := 123; Huge(2) := 124; Huge(3) := 125;
       Huge(4098) := 123; Huge(4099) := 124; Huge(4100) := 125;
       declare
-         B_Out : Byte_Array := Compress (Huge);
-         B_Dec : Byte_Array := Decompress (B_Out, Huge'Length);
+         B_Out : constant Byte_Array := Compress (Huge);
+         B_Dec : constant Byte_Array := Decompress (B_Out, Huge'Length);
       begin
          Assert_Equal (Huge, B_Dec, "Cyclic wrap-around match dropped safety boundaries");
       end;
@@ -148,9 +147,9 @@ begin
    Put_Line ("TEST 12 - Heavy Sustained Binary Loads");
    Put_Line ("  12.1 Assert continuous matching logic cascades correctly unpack limits");
    declare
-      Huge_Zeros : Byte_Array (1 .. 5000) := (others => 42);
-      B_Out : Byte_Array := Compress (Huge_Zeros);
-      B_Dec : Byte_Array := Decompress (B_Out, Huge_Zeros'Length);
+      Huge_Zeros : constant Byte_Array (1 .. 5000) := (others => 42);
+      B_Out : constant Byte_Array := Compress (Huge_Zeros);
+      B_Dec : constant Byte_Array := Decompress (B_Out, Huge_Zeros'Length);
    begin
       Assert_Equal (Huge_Zeros, B_Dec, "Chain decompression unrolled incorrectly");
       Put_Line ("      PASS");
@@ -166,8 +165,8 @@ begin
          Rand_Data(I) := Byte((I * 17 + 5) mod 256);
       end loop;
       declare
-         B_Out : Byte_Array := Compress(Rand_Data);
-         B_Dec : Byte_Array := Decompress(B_Out, Rand_Data'Length);
+         B_Out : constant Byte_Array := Compress(Rand_Data);
+         B_Dec : constant Byte_Array := Decompress(B_Out, Rand_Data'Length);
       begin
          Assert (B_Out'Length >= Rand_Data'Length, "High entropy data somehow shrank?");
          Assert_Equal (Rand_Data, B_Dec, "Entropy decompression scrambled bits");
