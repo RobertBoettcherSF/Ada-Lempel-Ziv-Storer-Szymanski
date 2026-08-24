@@ -196,15 +196,24 @@ package body LZSS is
       Buf.Data(1 .. Input'Length) := Input;
 
       while Out_Pos <= Original_Size loop
-         if Buf.Bit_Pos >= Input'Length * 8 then
-            raise Compression_Error with "Unexpected end of bit stream";
+         -- Validate stream size before attempting to read the flag bit
+         if Buf.Bit_Pos + 1 > Input'Length * 8 then
+            raise Compression_Error with "Unexpected end of bit stream (missing flag)";
          end if;
 
          Flag := Read_Bits (Buf, 1);
          if Flag = 1 then
+            -- Validate stream size before attempting to read literal
+            if Buf.Bit_Pos + 8 > Input'Length * 8 then
+               raise Compression_Error with "Unexpected end of bit stream (missing literal)";
+            end if;
             Output (Out_Pos) := Byte (Read_Bits (Buf, 8));
             Out_Pos := Out_Pos + 1;
          else
+            -- Validate stream size before attempting to read distance and length
+            if Buf.Bit_Pos + 16 > Input'Length * 8 then
+               raise Compression_Error with "Unexpected end of bit stream (missing reference)";
+            end if;
             Dist := Read_Bits (Buf, 12) + 1;
             Len  := Read_Bits (Buf, 4) + Min_Match;
 
